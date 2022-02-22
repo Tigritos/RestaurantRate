@@ -1,3 +1,43 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:be24b83713c2fdd2fb4e93a9c01d6730ae84edae91aaad91073141f2c9ca5b5c
-size 1049
+//
+//  SceneDelegate.swift
+//  Restaurant Rate
+//
+//  Created by Tigran Oganisyan on 24.01.2022.
+//
+
+import UIKit
+@available(iOS 13.0, *)
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    var window: UIWindow?
+
+    
+    
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        if let windowScene = scene as? UIWindowScene {
+            self.window = UIWindow(windowScene: windowScene)
+            let viewController = MainViewController()
+            let navigationController = UINavigationController(rootViewController: viewController)
+            self.window!.rootViewController = navigationController
+            self.window!.makeKeyAndVisible()
+        }
+    }
+
+    func sceneDidDisconnect(_ scene: UIScene) {
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+    }
+
+
+}
+

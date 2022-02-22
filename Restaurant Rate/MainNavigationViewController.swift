@@ -1,3 +1,19 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:571cd3c1c9c0e473229a112605a9c6bee02cf43c1ced022417406d3e79c361c8
-size 290
+//
+//  MainNavigationViewController.swift
+//  Restaurant Rate
+//
+//  Created by Tigran Oganisyan on 24.01.2022.
+//
+
+import Foundation
+import UIKit
+
+
+
+class MainNavigationViewController: UINavigationController {
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+    
+}

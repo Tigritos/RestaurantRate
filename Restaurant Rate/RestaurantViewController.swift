@@ -578,6 +578,7 @@ enum ApiError: Error {
     case unknown
 }
 
+
 extension RestaurantViewController {
     func fetchFilms<T: Codable>(completion: @escaping (Result<T>) -> Void) {
         var resultURl = ""
