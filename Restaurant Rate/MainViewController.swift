@@ -14,8 +14,7 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
     let realm = try! Realm()
     var items: Results<Restaurant>!
     
-    //private let array: NSArray = ["First","Second","Third"]
-    private var tableView: UITableView = {
+    private lazy var tableView: UITableView = {
         let table = UITableView()
         table.register(RestaurantCell.self,
                        forCellReuseIdentifier: RestaurantCell.identifier)
@@ -68,13 +67,14 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
 
-    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         
         let action = UIContextualAction(style: .destructive,
                                         title: "Удалить",
                                         handler: { (action, view, contextualHandler) in
             
-            let alert = UIAlertController(title: "Удаление объекта", message: "Вы точно хотите удалить объект?", preferredStyle: .alert)
+            let alert = UIAlertController(title: "Удаление объекта",
+                                          message: "Вы точно хотите удалить объект?", preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Удалить",
                                           style: .destructive,
                                           handler: { [self] action in
@@ -84,7 +84,9 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
                 }
                 tableView.reloadData()
             }))
-            alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
+            alert.addAction(UIAlertAction(title: "Отмена",
+                                          style: .cancel,
+                                          handler: nil))
             
             self.present(alert, animated: true, completion: nil)
         }
