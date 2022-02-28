@@ -103,3 +103,6 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
     
 }
 
+extension MainViewController: MainViewModelDelegate {
+    
+}
