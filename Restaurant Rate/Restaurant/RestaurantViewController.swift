@@ -12,16 +12,9 @@ import Photos
 import PhotosUI
 import Alamofire
 
-final class RestaurantViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UIImagePickerControllerDelegate & UINavigationControllerDelegate, PHPickerViewControllerDelegate {
+final class RestaurantViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UIImagePickerControllerDelegate & UINavigationControllerDelegate, PHPickerViewControllerDelegate, UITextFieldDelegate {
 
-    let realm = try! Realm()
 
-    private lazy var kitchenRate: Int = 0
-    private lazy var interiorRate: Int = 0
-    private lazy var serviceRate: Int = 0
-    private lazy var totalRate: Double = 0
-    
-    private lazy var imagesArray = [UIImage]()
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.itemSize = CGSize(width: 150, height: 150)
@@ -184,13 +177,16 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
         return button
     }()
     
+    private let viewModel = RestaurantViewModel()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        viewModel.delegate = self
+        nameTextField.delegate = self
         collectionView.dataSource = self
         collectionView.delegate = self
         title = "Редактирование ресторана"
         view.backgroundColor = .white
-//        imagesArray.append(UIImage(named: "sugar")!)
         addViews() 
         setupLayout()
         setupButtons()
@@ -224,7 +220,7 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return imagesArray.count
+        return viewModel.getImagesCount()
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -232,22 +228,21 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
                                                             for: indexPath) as? ImagesCell else {
             return UICollectionViewCell()
         }
-        cell.imageView.image = imagesArray[indexPath.row]
+        cell.imageView.image = viewModel.getImages()[indexPath.row]
         return cell
     }
     
     func updateSumOfRatesLabel() {
-        let total: Double = Double(kitchenRate + interiorRate + serviceRate)/3
-        let totalRounded: Double = round(total * 10) / 10
-        sumOfRatesLabel.text = "\(totalRounded)"
-        totalRate = totalRounded
-        if totalRounded <= 3 {
+        let totalRate = viewModel.updateSumOfRates()
+        sumOfRatesLabel.text = "\(totalRate)"
+        
+        if totalRate <= 3 {
             sumOfRatesLabel.textColor = .systemRed
-        } else if totalRounded <= 6 {
+        } else if totalRate <= 6 {
             sumOfRatesLabel.textColor = .systemYellow
-        } else if totalRounded <= 9 {
+        } else if totalRate <= 9 {
             sumOfRatesLabel.textColor = .systemGreen
-        } else if totalRounded <= 10 {
+        } else if totalRate <= 10 {
             sumOfRatesLabel.textColor = .green
         }
     }
@@ -276,11 +271,11 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
             results.forEach { result in
                 result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] reading, error in
                     DispatchQueue.main.async {
-                        guard let self = self, let image = reading as? UIImage, error == nil else {
-                            return
-                        }
-                        let lastIndexPath = IndexPath(row: self.imagesArray.count, section: 0)
-                        self.imagesArray.append(image)
+                        guard let self = self,
+                              let image = reading as? UIImage,
+                              error == nil else { return }
+                        let lastIndexPath = IndexPath(row: self.viewModel.getImagesCount(), section: 0)
+                        self.viewModel.addImage(image: image)
                         self.defaultImage.isHidden = true
                         self.collectionView.insertItems(at: [lastIndexPath])
                     }
@@ -322,72 +317,18 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
     }
     
     @objc private func didTapStarButton(_ sender: UIButton) {
-        
-        if sender.tag < 11 {
-            kitchenRate = sender.tag
-            updateSumOfRatesLabel()
-            for tag in 1...sender.tag {
-                if let button = view.viewWithTag(tag) as? UIButton
-                {
-                    button.setImage(UIImage(systemName: "star.fill"), for: .normal)
-                }
-            }
-            guard sender.tag != 10 else {return}
-            for tag in sender.tag + 1...10 {
-                if let button = view.viewWithTag(tag) as? UIButton
-                {
-                    button.setImage(UIImage(systemName: "star"), for: .normal)
-                }
-            }
-        } else if sender.tag > 10 && sender.tag < 21 {
-            interiorRate = sender.tag - 10
-            updateSumOfRatesLabel()
-            for tag in 11...sender.tag {
-                if let button = view.viewWithTag(tag) as? UIButton
-                {
-                    button.setImage(UIImage(systemName: "star.fill"), for: .normal)
-                }
-            }
-            guard sender.tag != 20 else {return}
-            for tag in sender.tag + 1...20 {
-                if let button = view.viewWithTag(tag) as? UIButton
-                {
-                    button.setImage(UIImage(systemName: "star"), for: .normal)
-                }
-            }
-        } else if sender.tag > 20 && sender.tag < 31 {
-            serviceRate = sender.tag - 20
-            updateSumOfRatesLabel()
-            for tag in 21...sender.tag {
-                if let button = view.viewWithTag(tag) as? UIButton
-                {
-                    button.setImage(UIImage(systemName: "star.fill"), for: .normal)
-                }
-            }
-            guard sender.tag != 30 else {return}
-            for tag in sender.tag + 1...30 {
-                if let button = view.viewWithTag(tag) as? UIButton
-                {
-                    button.setImage(UIImage(systemName: "star"), for: .normal)
-                }
-            }
+        viewModel.starButtonDidTapped(tag: sender.tag)
+        updateSumOfRatesLabel()
+    }
+    
+    func textFieldDidChangeSelection(_ textField: UITextField) {
+        if textField == nameTextField {
+            viewModel.updateName(name: nameTextField.text)
         }
     }
     
     @objc private func didTapSaveButton() {
-        
-        let restaurant = Restaurant()
-        restaurant.name = nameTextField.text ?? "Без названия"
-        restaurant.kitchenRate = kitchenRate
-        restaurant.interiorRate = interiorRate
-        restaurant.serviceRate = serviceRate
-        restaurant.totalRate = totalRate
-        if !imagesArray.isEmpty {
-            restaurant.picture = imagesArray[0].jpegData(compressionQuality: 0.9)
-        }
-        try! realm.write {
-            realm.add(restaurant)
-        }
+        viewModel.saveButtonTapped()
         navigationController?.popViewController(animated: true)
     }
     
@@ -437,7 +378,7 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
             defaultImage.heightAnchor.constraint(equalToConstant: 200),
             defaultImage.widthAnchor.constraint(equalToConstant: 280)
         ]
-        if imagesArray.isEmpty {
+        if viewModel.getImages().isEmpty {
             NSLayoutConstraint.activate(imageConstraints)
         }
         
@@ -653,3 +594,17 @@ extension RestaurantViewController {
     }
 }
 
+extension RestaurantViewController: RestaurantViewModelDelegate {
+    func fillStarButtons(_ tag: Int) {
+        if let button = view.viewWithTag(tag) as? UIButton
+        {
+            button.setImage(UIImage(systemName: "star.fill"), for: .normal)
+        }
+    }
+    func unfillStarButtons(_ tag: Int) {
+        if let button = view.viewWithTag(tag) as? UIButton
+        {
+            button.setImage(UIImage(systemName: "star"), for: .normal)
+        }
+    }
+}

@@ -6,14 +6,11 @@
 //
 
 import UIKit
-import RealmSwift
 
 
 class MainViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
-    let realm = try! Realm()
-    var items: Results<Restaurant>!
-    
+
     private lazy var tableView: UITableView = {
         let table = UITableView()
         table.register(RestaurantCell.self,
@@ -21,15 +18,18 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
         return table
     }()
     
+    private let viewModel = MainViewModel()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "Рестораны"
         self.view.backgroundColor = .white
+        viewModel.viewDidLoad()
         configurateNavigationBar()
         tableView.delegate = self
         tableView.dataSource = self
         self.view.addSubview(tableView)
-        items = realm.objects(Restaurant.self)
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -48,8 +48,8 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if items.count != 0 {
-            return items.count
+        if viewModel.getItems().count != 0 {
+            return viewModel.getItems().count
         } else {return 0}
     }
     
@@ -57,7 +57,7 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
         guard let cell = tableView.dequeueReusableCell(withIdentifier: RestaurantCell.identifier,
                                                  for: indexPath as IndexPath) as? RestaurantCell else { return UITableViewCell()
         }
-        let item = items[indexPath.row]
+        let item = viewModel.getItems()[indexPath.row]
         cell.configure(name: item.name, imageData: item.picture, totalRate: item.totalRate)
         return cell
     }
@@ -78,10 +78,9 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
             alert.addAction(UIAlertAction(title: "Удалить",
                                           style: .destructive,
                                           handler: { [self] action in
-                let item = self.items[indexPath.row]
-                try! realm.write {
-                    realm.delete(item)
-                }
+                let position = indexPath.row
+                viewModel.deleteItem(position: position)
+
                 tableView.reloadData()
             }))
             alert.addAction(UIAlertAction(title: "Отмена",
@@ -100,7 +99,6 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
         navigationController?.pushViewController(vc, animated: true)
     }
 
-    
 }
 
 extension MainViewController: MainViewModelDelegate {
