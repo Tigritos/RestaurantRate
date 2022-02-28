@@ -22,7 +22,6 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
     private lazy var totalRate: Double = 0
     
     private lazy var imagesArray = [UIImage]()
-    // lazy var
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.itemSize = CGSize(width: 150, height: 150)
@@ -233,9 +232,6 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
                                                             for: indexPath) as? ImagesCell else {
             return UICollectionViewCell()
         }
-//        let queue = DispatchQueue(label: "serial queue")
-//        queue.asyncAfter(deadline: .now() + 1, execute: <#T##DispatchWorkItem#>)
-//        queue.sync(flags: DispatchWorkItemFlags.barrier, execute: <#T##() throws -> T#>)
         cell.imageView.image = imagesArray[indexPath.row]
         return cell
     }
@@ -297,20 +293,27 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
         fetchFilms() { [weak self] (result: Result<FilmsResponseDTO>) in
             switch result {
             case .success(let data):
-                print(data)
+                //print(data)
                 var resultAll: Set<String> = [] // not safe -> make Atomic
                 let dispatchGroup = DispatchGroup()
-                data.arr.forEach {
+                let firstFilm = data.arr.first
+                firstFilm?.characters.forEach {
                     dispatchGroup.enter()
-                    print("222 entered")
-                    self?.fetchCharacter(url: $0.characters) { result in
-                        print("222 leave")
-                        resultAll.insert(result?.first ?? "")
+                    self?.fetchCharacter(url: $0) { (result: Result<CharacterDTO>) in
+                        switch result {
+                        case .success(let data):
+                            print(data.name)
+                            resultAll.insert(data.name)
+                            
+                        case .failure(let error):
+                            print(error)
+                        }
                         dispatchGroup.leave()
                     }
                 }
+                
                 dispatchGroup.notify(queue: .global()) {
-                    print("222 all: \(resultAll)")
+                    print("all: \(resultAll)")
                 }
             case .failure(let error):
                 print(error)
@@ -441,7 +444,7 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
         let collectionViewConstraints = [
             collectionView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 20),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.heightAnchor.constraint(equalToConstant: 300)
         ]
         NSLayoutConstraint.activate(collectionViewConstraints)
@@ -525,7 +528,7 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
         NSLayoutConstraint.activate(serviceLabelConstraints)
         
         let saveButtonConstraints = [
-            saveButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+            saveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             saveButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ]
         saveButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal) // priority
@@ -568,15 +571,18 @@ struct FilmsResponseDTO: Codable {
 struct CharacterDTO: Codable {
     
     let films: [String]
+    let name: String
     
     enum CodingKeys: String, CodingKey {
         case films
+        case name
     }
 }
 
 enum ApiError: Error {
     case unknown
 }
+
 
 extension RestaurantViewController {
     func fetchFilms<T: Codable>(completion: @escaping (Result<T>) -> Void) {
@@ -596,7 +602,7 @@ extension RestaurantViewController {
                 response.result.isSuccess,
                 let data = response.data
             else {
-                print("Error while fetching tags: \(String(describing: response.result.error))")
+                print("Error: \(String(describing: response.result.error))")
                 let error = response.result.error ?? ApiError.unknown
                 completion(.failure(error))
                 return
@@ -604,7 +610,7 @@ extension RestaurantViewController {
             
             do {
                 let responseJSON = response.result.value as? [String: Any]
-                print(responseJSON)
+                //print(responseJSON)
                 let dto = try JSONDecoder().decode(T.self, from: data)
                 
                 completion(.success(dto))
@@ -617,27 +623,33 @@ extension RestaurantViewController {
         }
     }
     
-    func fetchCharacter(url: [String], completion: @escaping ([String]?) -> Void) {
+    func fetchCharacter<T: Codable>(url: String, completion: @escaping (Result<T>) -> Void) {
         
-        url.forEach { url in
+
             let request = Alamofire.request(url, method: .get, headers: nil)
             request.responseJSON { response in
-                guard response.result.isSuccess else {
+                guard
+                    response.result.isSuccess,
+                    let data = response.data
+                else {
                     print("Error while fetching tags: \(String(describing: response.result.error))")
-                    completion(nil)
-                  return
+                    let error = response.result.error ?? ApiError.unknown
+                    completion(.failure(error))
+                    return
                 }
-                guard let responseJSON = response.result.value as? [String: AnyObject],
-                      let name = responseJSON["name"] as? String else {
-                          print("Error")
-                          completion(nil)
-                          return
-                      }
-//                print(name)
+                
+                do {
+                    let responseJSON = response.result.value as? [String: Any]
+                    //print(responseJSON)
+                    let dto = try JSONDecoder().decode(T.self, from: data)
+                    
+                    completion(.success(dto))
+                } catch(let error) {
+                    print(error)
+                    completion(.failure(error))
+                }
+              
             }
-        }
-//        print(names)
-        completion(nil)
     }
 }
 
