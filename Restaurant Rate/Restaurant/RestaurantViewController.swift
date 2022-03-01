@@ -288,8 +288,8 @@ final class RestaurantViewController: UIViewController, UICollectionViewDataSour
         fetchFilms() { [weak self] (result: Result<FilmsResponseDTO>) in
             switch result {
             case .success(let data):
-                //print(data)
-                var resultAll: Set<String> = [] // not safe -> make Atomic
+
+                @Atomic var resultAll: Set<String> = []
                 let dispatchGroup = DispatchGroup()
                 let firstFilm = data.arr.first
                 firstFilm?.characters.forEach {
