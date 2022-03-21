@@ -1,5 +1,5 @@
 # Начальный экран
-Экран с таблицей
+* Экран с таблицей
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/73109565/159296104-5168fafa-faa6-4078-a758-880d0e9ef639.png" width="400px" height="750px"/></p>
@@ -22,3 +22,11 @@
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/73109565/159296815-96587c7a-3463-4678-bc0c-9e214b9bc8d8.png" width="400px" height="750px"/></p>
+
+## Профиль
+
+* На экране содержится информация о пользователе
+При выходе из профиля перебрасывается на начальный экран 
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/73109565/159301727-31c73ca0-4cf1-4533-b948-48def70d78da.png" width="400px" height="750px"/></p>
